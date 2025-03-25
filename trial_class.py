@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import os
 from scipy.signal import butter, filtfilt, find_peaks
 
-
 from sklearn.linear_model import LinearRegression
 
 class Trial:
