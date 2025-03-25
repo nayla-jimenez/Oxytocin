@@ -459,12 +459,9 @@ class Trial:
     def plot_behavior_event(self, behavior_name='all', ax=None):
         """
         Plot z-score signal with behavior event spans using the updated behaviors DataFrame.
-        Adjusts x-limits to remove unnecessary blank space at the beginning and end.
-        The shading for each bout is based on the initiating subject:
-        - Red for Novel-initiated events.
-        - Blue for Subject-initiated events.
+        This version plots the whole trace (using the full time range) instead of only the section
+        around behavior events.
         """
-
         y_data = self.zscore
         y_label = 'z-score'
         y_title = 'z-score Signal'
@@ -483,37 +480,32 @@ class Trial:
 
         labels_plotted = set()
 
-        # Determine x-axis limits based on behavior events.
-        if behavior_name == 'all':
-            min_time = self.behaviors['Event_Start'].min() - 30
-            max_time = self.behaviors['Event_End'].max() + 30
-        else:
-            behavior_df = self.behaviors[self.behaviors['Behavior'] == behavior_name]
-            if behavior_df.empty:
-                raise ValueError(f"Behavior event '{behavior_name}' not found in behaviors.")
-            min_time = behavior_df['Event_Start'].min() - 30
-            max_time = behavior_df['Event_End'].max() + 30
-
-        # Iterate through the behaviors DataFrame and shade bouts based on subject.
+        # Even though we still shade the behavior events, we set the x-axis to display the full trace.
+        # (If desired, you could still filter the shaded events based on behavior_name.)
         if behavior_name == 'all':
             for _, row in self.behaviors.iterrows():
                 subj = row.get('Subject', None)
                 color = subject_colors.get(subj, 'grey')
                 on, off = row['Event_Start'], row['Event_End']
-                # Only add the label once for each subject.
                 if subj not in labels_plotted:
                     ax.axvspan(on, off, alpha=0.25, label=subj, color=color)
                     labels_plotted.add(subj)
                 else:
                     ax.axvspan(on, off, alpha=0.25, color=color)
         else:
-            # If a specific behavior is chosen, filter first then shade.
+            behavior_df = self.behaviors[self.behaviors['Behavior'] == behavior_name]
+            if behavior_df.empty:
+                raise ValueError(f"Behavior event '{behavior_name}' not found in behaviors.")
             for _, row in behavior_df.iterrows():
                 subj = row.get('Subject', None)
                 color = subject_colors.get(subj, 'grey')
                 ax.axvspan(row['Event_Start'], row['Event_End'], alpha=0.25, color=color)
 
-        ax.set_xlim(min_time, max_time)  # Adjust x-axis limits to remove blank space
+        # Set the x-axis limits to the full range of timestamps.
+        min_time = self.timestamps[0]
+        max_time = self.timestamps[-1]
+        ax.set_xlim(min_time, max_time)
+
         ax.set_ylabel(y_label)
         ax.set_xlabel('Seconds')
         ax.set_title(f'{self.subject_name}: {y_title} with {behavior_name.capitalize()} Bouts' 
@@ -527,6 +519,7 @@ class Trial:
         if ax is None:
             plt.tight_layout()
             plt.show()
+
 
 
 
