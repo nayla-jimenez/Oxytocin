@@ -93,7 +93,7 @@ class Experiment:
             print("No trials found in the experiment.")
             return
         
-        fig, axes = plt.subplots(nrows=num_trials, figsize=(12, 3 * num_trials), sharex=True)
+        fig, axes = plt.subplots(nrows=num_trials, figsize=(12, 3 * num_trials), linewidth =0.1, sharex=True)
 
         # Ensure axes is iterable (in case of a single subplot)
         if num_trials == 1:
