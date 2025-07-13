@@ -7,7 +7,7 @@ from scipy.signal import butter, filtfilt, find_peaks
 
 from sklearn.linear_model import LinearRegression
 
-class Trial:
+class Helloo:
     def __init__(self, trial_path):
         tdtdata = tdt.read_block(trial_path)
         

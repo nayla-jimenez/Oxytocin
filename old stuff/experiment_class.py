@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 from trial_class import Trial
 
-class Experiment:
+class Hello:
     def __init__(self, experiment_folder_path, behavior_folder_path):
         self.experiment_folder_path = experiment_folder_path
         self.behavior_folder_path = behavior_folder_path
