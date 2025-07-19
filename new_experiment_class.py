@@ -751,6 +751,87 @@ class Experiment:
         plt.tight_layout()
         plt.show()
 
+    def plot_random_timepoint_PETHs(self, behavior="Investigation", pre_time=4, post_time=10, sampling_rate=100):
+        """
+        For each trial:
+        - Determines how many events (rows) exist for the specified behavior.
+        - Randomly selects that many time points from the trial's total duration.
+        - For each random time point, plots a PETH from -pre_time to +post_time seconds.
+        - Adds a dashed vertical line at the random reference time (t=0).
+        
+        Parameters:
+        behavior (str, optional): The behavior to count events for (defaults to "Investigation").
+        pre_time (float): Seconds before random timepoint to include in PETH (default: 4).
+        post_time (float): Seconds after random timepoint to include in PETH (default: 10).
+        sampling_rate (float): Sampling rate of the photometry signal in Hz (default: 100).
+        """
+        import matplotlib.pyplot as plt
+        import numpy as np
+        import random
+
+        for trial_name, trial in self.trials.items():
+            # Check if trial has photometry data
+            if 'DA' not in trial.streams:
+                print(f"No DA signal found in trial {trial_name}. Skipping.")
+                continue
+
+            # Get raw photometry signal
+            signal_array = trial.streams['DA']  # 1D array: signal values
+
+            # Reconstruct time axis
+            num_samples = len(signal_array)
+            total_duration = num_samples / sampling_rate  # Total duration in seconds
+            time_array = np.linspace(0, total_duration, num_samples)
+
+            # Count number of behavior events (rows in the filtered DataFrame)
+            if not hasattr(trial, 'behaviors'):
+                print(f"No behavior data for trial {trial_name}. Skipping.")
+                continue
+            df_behavior = trial.behaviors[trial.behaviors["Behavior"] == behavior].copy()
+            num_events = len(df_behavior)  # Count number of rows (events)
+
+            if num_events == 0:
+                print(f"No {behavior} events found in trial {trial_name}. Skipping.")
+                continue
+
+            print(f"Trial {trial_name}: {num_events} {behavior} events found. Plotting {num_events} random PETHs.")
+
+            # Randomly select num_events timepoints within the trial
+            random_timepoints = [random.uniform(0, total_duration) for _ in range(num_events)]
+            random_timepoints.sort()  # Sort for cleaner visualization
+
+            # Plot random PETHs
+            fig, axes = plt.subplots(num_events, 1, figsize=(7, 2.5 * num_events), sharex=True)
+
+            if num_events == 1:
+                axes = [axes]  # Ensure axes is iterable
+
+            for ax, random_time in zip(axes, random_timepoints):
+                # Extract signal around random_time
+                start_time = random_time - pre_time
+                end_time = random_time + post_time
+
+                # Mask indices within this time window
+                mask = (time_array >= start_time) & (time_array <= end_time)
+                if not np.any(mask):
+                    print(f"No data in window around random time {random_time:.2f}s for {trial_name}.")
+                    continue
+
+                # Align time relative to random point
+                rel_time = time_array[mask] - random_time
+                rel_signal = signal_array[mask]
+
+                # Plot trace
+                ax.plot(rel_time, rel_signal, color='blue')
+                ax.axvline(x=0, color='black', linestyle='--')  # Dashed line at random timepoint
+                ax.set_title(f"Trial {trial_name} - Random Time {random_time:.2f}s")
+                ax.set_ylabel("Signal")
+
+            axes[-1].set_xlabel("Time Relative to Random Point (s)")
+            plt.tight_layout()
+            plt.show()
+
+
     def plot_all_behavior_PETHs(self, selected_bouts=None, behavior="Investigation"):
         """
         Plots all PETHs for the specified behavior for all trials in the experiment.
